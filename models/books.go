@@ -2,7 +2,7 @@
 package models
 
 type Book struct {
-	ID          int
+	ID          int64
 	Title       string
 	Description string
 	Authors     []string
