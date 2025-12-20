@@ -51,7 +51,7 @@ func (u *User) ValidateUser() error {
 
 	err := row.Scan(&u.ID, &retrievedPassword)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	isValid := utils.CheckPassword(u.Password, retrievedPassword)

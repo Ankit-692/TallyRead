@@ -9,26 +9,45 @@ import (
 )
 
 func GenerateToken(email string, id int64) (string, error) {
+	secretKey := os.Getenv("secretkey")
+
+	if secretKey == "" {
+		return "", errors.New("SECRETKEY environment variable not set")
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email": email,
 		"id":    id,
 		"exp":   time.Now().Add(7 * 24 * time.Hour).Unix(),
 	})
 
-	return token.SignedString([]byte(os.Getenv("secretkey")))
+	tokenString, err := token.SignedString([]byte(secretKey))
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
 }
 
 func VerifyToken(token string) (int64, error) {
+
+	secretKey := os.Getenv("secretkey")
+
+	if secretKey == "" {
+		return 0, errors.New("SECRETKEY environment variable not set")
+	}
+
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (any, error) {
+
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 
 		if !ok {
 			return nil, errors.New("unexpected Signing Method")
 		}
-		return []byte(os.Getenv("secretkey")), nil
+		return []byte(secretKey), nil
 	})
 	if err != nil {
-		return 0, errors.New("could not parse Token")
+		return 0, errors.New("could not parse Token - " + err.Error())
 	}
 
 	isValid := parsedToken.Valid
