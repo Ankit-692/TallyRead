@@ -14,4 +14,7 @@ func RegisterRoutes(server *gin.Engine) {
 	authenticated.Use(middlewares.Authenticate)
 	authenticated.POST("/addBook", CreateBook)
 	authenticated.GET("/getAllBooks", GetAllBooks)
+	authenticated.DELETE("/deleteBook/:id", DeleteBookByID)
+	authenticated.GET("/book/:id", GetBookByID)
+	authenticated.POST("/book/:id", UpdateBook)
 }

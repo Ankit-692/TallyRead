@@ -30,7 +30,7 @@ func CreateTables() {
         description TEXT,
         authors     TEXT,
         user_id     INTEGER NOT NULL,
-		total_page     TEXT,
+		total_page     INTEGER,
         ratings        TEXT,
         image          TEXT,
         published_date TEXT,
@@ -38,25 +38,28 @@ func CreateTables() {
 		state       TEXT,
         created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+		UNIQUE(user_id, title)
     )		
 	`
 
 	createUsersTable := `
 	CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY,
+		firstName TEXT NOT NULL,
+		lastName TEXT,
 		email TEXT NOT NULL UNIQUE,
 		password TEXT NOT NULL
 	)
 	`
+	_, err := DB.Exec(createUsersTable)
+	if err != nil {
+		panic("could not create Users Table " + err.Error())
+	}
 
-	_, err := DB.Exec(createBooksTable)
+	_, err = DB.Exec(createBooksTable)
 	if err != nil {
 		panic("Could not create Books Table " + err.Error())
 	}
 
-	_, err = DB.Exec(createUsersTable)
-	if err != nil {
-		panic("could not create Users Table " + err.Error())
-	}
 }

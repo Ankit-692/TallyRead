@@ -8,15 +8,17 @@ import (
 )
 
 type User struct {
-	ID       int64
-	Email    string `binding:"required"`
-	Password string `binding:"required"`
+	ID        int64
+	FirstName string
+	LastName  string
+	Email     string `binding:"required"`
+	Password  string `binding:"required"`
 }
 
 func (u *User) Save() error {
 	query := `
-	INSERT INTO users (email,password)
-	VALUES (?,?)
+	INSERT INTO users (firstName,lastName,email,password)
+	VALUES (?,?,?,?)
 	`
 	stmt, err := db.DB.Prepare(query)
 	if err != nil {
@@ -30,7 +32,7 @@ func (u *User) Save() error {
 		return err
 	}
 
-	result, err := stmt.Exec(u.Email, hashedPassword)
+	result, err := stmt.Exec(u.FirstName, u.LastName, u.Email, hashedPassword)
 	if err != nil {
 		return err
 	}
