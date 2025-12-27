@@ -2,6 +2,7 @@ package routes
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"tallyRead.com/models"
@@ -43,4 +44,78 @@ func Login(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"message": "Login Successfully", "token": token})
+}
+
+func ForgotPassword(context *gin.Context) {
+	var req models.ForgotPassword
+
+	if err := context.ShouldBindJSON(&req); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Email", "error": err.Error()})
+		return
+	}
+
+	user, err := models.FindByEmail(req.Email)
+
+	if err != nil || user == nil {
+		context.JSON(http.StatusOK, gin.H{"message": "If an account with that email exists, a reset Link has been sent."})
+		return
+	}
+
+	token, hashedToken := utils.GenerateResetToken()
+	expires := time.Now().Add(5 * time.Minute)
+
+	user.ResetToken = hashedToken
+	user.ResetTokenExpires = expires
+
+	if err := user.UpdateResetToken(); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	resetURL := utils.GenerateResetURL(token)
+
+	if err := utils.SendResetEmail(user.Email, resetURL); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err != nil {
+		context.JSON(http.StatusOK, gin.H{"message": "If an account with that email exists, a reset Link has been sent."})
+		return
+	}
+}
+
+func ResetPassword(context *gin.Context) {
+	token := context.Param("token")
+
+	var req models.ResetRequest
+
+	if err := context.ShouldBindJSON(&req); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	hashedToken := utils.GetHashedToken(token)
+
+	user, err := models.FindByResetToken(hashedToken)
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	if user.ResetTokenExpires.Before(time.Now()) {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Expired Token"})
+	}
+
+	user.Password = req.Password
+	user.ResetToken = ""
+	user.ResetTokenExpires = time.Time{}
+
+	err = user.UpdatePassword()
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	context.JSON(http.StatusOK, gin.H{"message": "Password Updated"})
+
 }

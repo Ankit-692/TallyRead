@@ -9,6 +9,8 @@ import (
 func RegisterRoutes(server *gin.Engine) {
 	server.POST("/register", RegisterUser)
 	server.POST("/login", Login)
+	server.POST("/forgot-Password", ForgotPassword)
+	server.POST("/reset-password", ResetPassword)
 
 	authenticated := server.Group("/")
 	authenticated.Use(middlewares.Authenticate)

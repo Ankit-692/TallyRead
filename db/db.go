@@ -49,9 +49,13 @@ func CreateTables() {
 		firstName TEXT NOT NULL,
 		lastName TEXT,
 		email TEXT NOT NULL UNIQUE,
-		password TEXT NOT NULL
+		password TEXT NOT NULL,
+		reset_token TEXT,
+        reset_token_expires DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	)
 	`
+
 	_, err := DB.Exec(createUsersTable)
 	if err != nil {
 		panic("could not create Users Table " + err.Error())
