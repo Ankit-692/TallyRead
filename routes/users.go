@@ -43,7 +43,7 @@ func Login(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{"message": "Login Successfully", "token": token})
+	context.JSON(http.StatusOK, gin.H{"message": "Login Successfully", "token": token, "user": user})
 }
 
 func ForgotPassword(context *gin.Context) {
@@ -78,20 +78,22 @@ func ForgotPassword(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	if err != nil {
-		context.JSON(http.StatusOK, gin.H{"message": "If an account with that email exists, a reset Link has been sent."})
-		return
-	}
+	context.JSON(http.StatusOK, gin.H{"message": "If an account with that email exists, a reset Link has been sent."})
 }
 
 func ResetPassword(context *gin.Context) {
-	token := context.Param("token")
+	token := context.DefaultQuery("token", "nil")
+
+	if token == "nil" {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Link"})
+		return
+	}
 
 	var req models.ResetRequest
 
 	if err := context.ShouldBindJSON(&req); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	hashedToken := utils.GetHashedToken(token)
@@ -100,10 +102,12 @@ func ResetPassword(context *gin.Context) {
 
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	if user.ResetTokenExpires.Before(time.Now()) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "Expired Token"})
+		return
 	}
 
 	user.Password = req.Password
@@ -114,6 +118,7 @@ func ResetPassword(context *gin.Context) {
 
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	context.JSON(http.StatusOK, gin.H{"message": "Password Updated"})

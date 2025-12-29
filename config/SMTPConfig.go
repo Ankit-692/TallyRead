@@ -10,10 +10,17 @@ type SMTPConfig struct {
 	ClientURL string
 }
 
-var Smtp = SMTPConfig{
-	Host:      os.Getenv("SMTP_HOST"),
-	Port:      os.Getenv("SMTP_PORT"),
-	Email:     os.Getenv("SMTP_EMAIL"),
-	Password:  os.Getenv("your-gmail-app-password"),
-	ClientURL: os.Getenv("FRONTEND_URL"),
+var smtpConfig *SMTPConfig
+
+func GetSMTP() SMTPConfig {
+	if smtpConfig == nil {
+		smtpConfig = &SMTPConfig{
+			Host:      os.Getenv("SMTP_HOST"),
+			Port:      os.Getenv("SMTP_PORT"),
+			Email:     os.Getenv("SMTP_EMAIL"),
+			Password:  os.Getenv("SMTP_PASSWORD"),
+			ClientURL: os.Getenv("FRONTEND_URL"),
+		}
+	}
+	return *smtpConfig
 }

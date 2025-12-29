@@ -48,19 +48,21 @@ func (u *User) Save() error {
 
 func (u *User) ValidateUser() error {
 	query := `
-	SELECT id,password FROM users WHERE email=?
+	SELECT id,email,firstName,lastName,password FROM users WHERE email=?
 	`
 
 	row := db.DB.QueryRow(query, u.Email)
 
 	var retrievedPassword string
 
-	err := row.Scan(&u.ID, &retrievedPassword)
+	err := row.Scan(&u.ID, &u.Email, &u.FirstName, &u.LastName, &retrievedPassword)
 	if err != nil {
 		return err
 	}
 
 	isValid := utils.CheckPassword(u.Password, retrievedPassword)
+
+	u.Password = ""
 
 	if !isValid {
 		return errors.New("invalid credentials")
@@ -71,12 +73,12 @@ func (u *User) ValidateUser() error {
 
 func FindByEmail(email string) (*User, error) {
 	query := `
-	SELECT id,firstName,lastName,reset_token,reset_token_expires FROM users WHERE email=?
+	SELECT id,email,firstName,lastName FROM users WHERE email=?
 	`
 	row := db.DB.QueryRow(query, email)
 
 	var user User
-	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.ResetToken, &user.ResetTokenExpires)
+	err := row.Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName)
 
 	if err != nil {
 		return nil, err
@@ -100,7 +102,7 @@ func (u *User) UpdateResetToken() error {
 		return err
 	}
 
-	_, err = stmt.Exec(u.ResetToken, u.ResetTokenExpires)
+	_, err = stmt.Exec(u.ResetToken, u.ResetTokenExpires, u.ID)
 
 	if err != nil {
 		return err
@@ -130,7 +132,7 @@ func FindByResetToken(hashedToken string) (*User, error) {
 func (u *User) UpdatePassword() error {
 	query := `
 		UPDATE users
-		SET password,reset_toke,reset_token_expires
+		SET password=?,reset_token=?,reset_token_expires=?
 		WHERE email=?
 	`
 
@@ -147,7 +149,7 @@ func (u *User) UpdatePassword() error {
 		return err
 	}
 
-	_, err = stmt.Exec(hashedPassword, u.ResetToken, u.ResetTokenExpires)
+	_, err = stmt.Exec(hashedPassword, u.ResetToken, u.ResetTokenExpires, u.Email)
 
 	if err != nil {
 		return err
