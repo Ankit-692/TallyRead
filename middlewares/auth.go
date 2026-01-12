@@ -3,23 +3,20 @@ package middlewares
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"tallyRead.com/utils"
 )
 
 func Authenticate(context *gin.Context) {
-	token := context.Request.Header.Get("Authorization")
+	token, err := context.Cookie("auth_token")
 
-	if token == "" {
+	if err != nil || token == "" {
 		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Not authorized No Token Found"})
 		return
 	}
 
-	tokenString := strings.TrimPrefix(token, "Bearer ")
-
-	userId, err := utils.VerifyToken(tokenString)
+	userId, name, err := utils.VerifyToken(token)
 
 	if err != nil {
 		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Not authorized", "error": err.Error()})
@@ -27,6 +24,12 @@ func Authenticate(context *gin.Context) {
 	}
 
 	context.Set("userId", userId)
+	context.Set("username", name)
 
 	context.Next()
+}
+
+func Authorization(context *gin.Context) {
+	username, _ := context.Get("username")
+	context.JSON(http.StatusOK, gin.H{"authenticated": true, "username": username})
 }

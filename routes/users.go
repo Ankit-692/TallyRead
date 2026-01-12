@@ -38,12 +38,20 @@ func Login(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	token, err := utils.GenerateToken(user.Email, user.ID)
+	token, err := utils.GenerateToken(user.Email, user.ID, user.FirstName)
 	if err != nil {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{"message": "Login Successfully", "token": token, "user": user})
+
+	context.SetCookie("auth_token", token, 3600*24*7, "/", "localhost", false, true)
+
+	context.JSON(http.StatusOK, gin.H{"message": "Login Successfully", "user": user})
+}
+
+func Logout(context *gin.Context) {
+	context.SetCookie("auth_token", "", -1, "/", "localhost", false, true)
+	context.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
 func ForgotPassword(context *gin.Context) {

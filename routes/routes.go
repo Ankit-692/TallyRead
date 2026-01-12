@@ -19,4 +19,6 @@ func RegisterRoutes(server *gin.Engine) {
 	authenticated.DELETE("/deleteBook/:id", DeleteBookByID)
 	authenticated.GET("/book/:id", GetBookByID)
 	authenticated.POST("/book/:id", UpdateBook)
+	authenticated.GET("/api/me", middlewares.Authorization)
+	authenticated.POST("/logout", Logout)
 }
