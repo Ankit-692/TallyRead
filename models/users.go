@@ -96,11 +96,11 @@ func (u *User) UpdateResetToken() error {
 
 	stmt, err := db.DB.Prepare(query)
 
-	defer stmt.Close()
-
 	if err != nil {
 		return err
 	}
+
+	defer stmt.Close()
 
 	_, err = stmt.Exec(u.ResetToken, u.ResetTokenExpires, u.ID)
 
