@@ -3,10 +3,12 @@ package routes
 
 import (
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-resty/resty/v2"
 	"tallyRead.com/models"
 )
 
@@ -143,4 +145,28 @@ func UpdateBook(context *gin.Context) {
 
 	context.JSON(http.StatusOK, gin.H{"message": "Book Updated successfully"})
 
+}
+
+func SearchBooks(context *gin.Context) {
+	query := context.Query("q")
+	if query == "" {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Query parameter 'q' is required"})
+		return
+	}
+
+	apiKey := os.Getenv("GOOGLE_BOOKS_API_KEY")
+
+	client := resty.New()
+	resp, err := client.R().SetQueryParams(map[string]string{
+		"q":          query,
+		"maxResults": "40",
+		"Key":        apiKey,
+	}).Get("https://www.googleapis.com/books/v1/volumes")
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	context.Data(resp.StatusCode(), "application/json", resp.Body())
 }

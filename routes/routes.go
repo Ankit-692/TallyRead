@@ -12,13 +12,14 @@ func RegisterRoutes(server *gin.Engine) {
 	server.POST("/forgot-Password", ForgotPassword)
 	server.POST("/reset-password", ResetPassword)
 
-	authenticated := server.Group("/")
+	authenticated := server.Group("/api")
 	authenticated.Use(middlewares.Authenticate)
 	authenticated.POST("/addBook", CreateBook)
 	authenticated.GET("/getAllBooks", GetAllBooks)
-	authenticated.DELETE("/deleteBook/:id", DeleteBookByID)
+	authenticated.POST("/deleteBook/:id", DeleteBookByID)
 	authenticated.GET("/book/:id", GetBookByID)
 	authenticated.POST("/book/:id", UpdateBook)
-	authenticated.GET("/api/me", middlewares.Authorization)
+	authenticated.GET("/me", middlewares.Authorization)
+	authenticated.GET("/searchBooks", SearchBooks)
 	authenticated.POST("/logout", Logout)
 }
