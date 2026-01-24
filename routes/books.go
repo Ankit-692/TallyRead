@@ -30,7 +30,6 @@ func CreateBook(context *gin.Context) {
 	book.UserID = userId.(int64)
 
 	err := book.Save()
-
 	if err != nil {
 		if strings.Contains(err.Error(), "2067") {
 			context.JSON(http.StatusConflict, gin.H{"error": "Entry Already Exists"})
@@ -44,7 +43,6 @@ func CreateBook(context *gin.Context) {
 }
 
 func GetAllBooks(context *gin.Context) {
-
 	userId, _ := context.Get("userId")
 
 	status := context.DefaultQuery("status", "all")
@@ -74,14 +72,12 @@ func DeleteBookByID(context *gin.Context) {
 	}
 
 	book, err := models.GetBookByID(id)
-
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	err = book.Delete()
-
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -98,14 +94,12 @@ func GetBookByID(context *gin.Context) {
 	}
 
 	book, err := models.GetBookByID(id)
-
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	context.JSON(http.StatusOK, gin.H{"book": book})
-
 }
 
 func UpdateBook(context *gin.Context) {
@@ -123,7 +117,6 @@ func UpdateBook(context *gin.Context) {
 	}
 
 	book, err := models.GetBookByID(id)
-
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -144,7 +137,6 @@ func UpdateBook(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, gin.H{"message": "Book Updated successfully"})
-
 }
 
 func SearchBooks(context *gin.Context) {
@@ -162,7 +154,6 @@ func SearchBooks(context *gin.Context) {
 		"maxResults": "40",
 		"Key":        apiKey,
 	}).Get("https://www.googleapis.com/books/v1/volumes")
-
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return

@@ -13,7 +13,7 @@ type User struct {
 	FirstName         string
 	LastName          string
 	Email             string `binding:"required"`
-	Password          string `binding:"required"`
+	Password          string `binding:"required,min=8"`
 	ResetToken        string
 	ResetTokenExpires time.Time
 	CreatedAt         time.Time
@@ -79,7 +79,6 @@ func FindByEmail(email string) (*User, error) {
 
 	var user User
 	err := row.Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName)
-
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +94,6 @@ func (u *User) UpdateResetToken() error {
     `
 
 	stmt, err := db.DB.Prepare(query)
-
 	if err != nil {
 		return err
 	}
@@ -103,7 +101,6 @@ func (u *User) UpdateResetToken() error {
 	defer stmt.Close()
 
 	_, err = stmt.Exec(u.ResetToken, u.ResetTokenExpires, u.ID)
-
 	if err != nil {
 		return err
 	}
@@ -121,7 +118,6 @@ func FindByResetToken(hashedToken string) (*User, error) {
 
 	var user User
 	err := row.Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName, &user.ResetToken, &user.ResetTokenExpires)
-
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +133,6 @@ func (u *User) UpdatePassword() error {
 	`
 
 	stmt, err := db.DB.Prepare(query)
-
 	if err != nil {
 		return err
 	}
@@ -150,11 +145,9 @@ func (u *User) UpdatePassword() error {
 	}
 
 	_, err = stmt.Exec(hashedPassword, u.ResetToken, u.ResetTokenExpires, u.Email)
-
 	if err != nil {
 		return err
 	}
 
 	return nil
-
 }

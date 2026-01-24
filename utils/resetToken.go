@@ -25,5 +25,5 @@ func GetHashedToken(token string) string {
 }
 
 func GenerateResetURL(token string) string {
-	return config.GetSMTP().ClientURL + "/reset-password?token=" + token
+	return config.GetSMTP().ClientURL + "/resetPassword?token=" + token
 }
