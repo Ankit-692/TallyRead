@@ -147,12 +147,11 @@ func SearchBooks(context *gin.Context) {
 	}
 
 	apiKey := os.Getenv("GOOGLE_BOOKS_API_KEY")
-
 	client := resty.New()
 	resp, err := client.R().SetQueryParams(map[string]string{
 		"q":          query,
 		"maxResults": "40",
-		"Key":        apiKey,
+		"key":        apiKey,
 	}).Get("https://www.googleapis.com/books/v1/volumes")
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err})
