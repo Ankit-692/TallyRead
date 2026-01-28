@@ -2,13 +2,17 @@
 package routes
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
+	"tallyRead.com/db"
 	"tallyRead.com/models"
 )
 
@@ -141,22 +145,70 @@ func UpdateBook(context *gin.Context) {
 
 func SearchBooks(context *gin.Context) {
 	query := context.Query("q")
-	if query == "" {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "Query parameter 'q' is required"})
+	cacheKey := "books:" + query
+
+	// 1. Check Redis
+	if cachedData, err := db.RedisClient.Get(context, cacheKey).Result(); err == nil {
+		context.Data(http.StatusOK, "application/json", []byte(cachedData))
 		return
 	}
 
+	// 2. Fetch from Google
 	apiKey := os.Getenv("GOOGLE_BOOKS_API_KEY")
 	client := resty.New()
-	resp, err := client.R().SetQueryParams(map[string]string{
-		"q":          query,
-		"maxResults": "40",
-		"key":        apiKey,
-	}).Get("https://www.googleapis.com/books/v1/volumes")
+	var googleResp struct {
+		Items []struct {
+			VolumeInfo struct {
+				Title         string   `json:"title"`
+				Description   string   `json:"description"`
+				Authors       []string `json:"authors"`
+				PageCount     int16    `json:"pageCount"`
+				AverageRating float64  `json:"averageRating"`
+				ImageLinks    struct {
+					Thumbnail string `json:"thumbnail"`
+				} `json:"imageLinks"`
+				PublishedDate string `json:"publishedDate"`
+			} `json:"volumeInfo"`
+		} `json:"items"`
+	}
+
+	_, err := client.R().SetQueryParams(map[string]string{
+		"q": query, "maxResults": "40", "key": apiKey,
+	}).SetResult(&googleResp).Get("https://www.googleapis.com/books/v1/volumes")
+
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "API failed"})
 		return
 	}
 
-	context.Data(resp.StatusCode(), "application/json", resp.Body())
+	// 3. Map to your Book Struct
+	var results []models.Book
+	for _, item := range googleResp.Items {
+		info := item.VolumeInfo
+		authors := "Unknown Author"
+		if len(info.Authors) > 0 {
+			authors = strings.Join(info.Authors, ", ")
+		}
+
+		img := info.ImageLinks.Thumbnail
+		if img == "" {
+			img = "assets/noCover.png"
+		}
+
+		results = append(results, models.Book{
+			Title:         info.Title,
+			Description:   info.Description,
+			Authors:       authors,
+			TotalPage:     info.PageCount,
+			Ratings:       fmt.Sprintf("%.1f", info.AverageRating),
+			Image:         img,
+			PublishedDate: info.PublishedDate,
+		})
+	}
+
+	// 4. Cache the clean Slice
+	jsonData, _ := json.Marshal(results)
+	db.RedisClient.Set(context, cacheKey, jsonData, 24*time.Hour)
+
+	context.JSON(http.StatusOK, results)
 }

@@ -3,11 +3,14 @@ package db
 
 import (
 	"database/sql"
+	"os"
 
+	"github.com/redis/go-redis/v9"
 	_ "modernc.org/sqlite"
 )
 
 var DB *sql.DB
+var RedisClient *redis.Client
 
 func InitDB() {
 	var err error
@@ -18,6 +21,13 @@ func InitDB() {
 
 	DB.SetMaxOpenConns(10)
 	DB.SetMaxIdleConns(5)
+
+	opt, err := redis.ParseURL(os.Getenv("REDIS_URL"))
+	if err != nil {
+		panic("Could not parse Redis URL: " + err.Error())
+	}
+
+	RedisClient = redis.NewClient(opt)
 
 	CreateTables()
 }
