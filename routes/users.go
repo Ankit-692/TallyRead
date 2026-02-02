@@ -19,7 +19,12 @@ func RegisterUser(context *gin.Context) {
 
 	err := user.Save()
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if err.Error() == "Registration limit reached: maximum 350 users allowed" {
+			context.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user"})
 		return
 	}
 

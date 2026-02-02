@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"tallyRead.com/db"
@@ -22,6 +23,18 @@ type User struct {
 }
 
 func (u *User) Save() error {
+
+	var count int
+	countQuery := `SELECT COUNT(*) FROM users`
+	err := db.DB.QueryRow(countQuery).Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	if count >= 350 {
+		return fmt.Errorf("Registration limit reached: maximum 350 users allowed")
+	}
+
 	query := `
 	INSERT INTO users (firstName,lastName,email,password)
 	VALUES (?,?,?,?)
@@ -185,11 +198,11 @@ func (u *User) UpdateSearchCount() error {
 	`
 	stmt, err := db.DB.Prepare(query)
 
-	defer stmt.Close()
-
 	if err != nil {
 		return err
 	}
+
+	defer stmt.Close()
 
 	_, err = stmt.Exec(u.SearchCount, u.LastSearchDate, u.ID)
 
