@@ -62,7 +62,9 @@ func CreateTables() {
 		password TEXT NOT NULL,
 		reset_token TEXT,
         reset_token_expires DATETIME,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		search_count INTEGER DEFAULT 0,
+		last_search_date DATETIME DEFAULT CURRENT_TIMESTAMP
 	)
 	`
 

@@ -17,6 +17,8 @@ type User struct {
 	ResetToken        string
 	ResetTokenExpires time.Time
 	CreatedAt         time.Time
+	SearchCount       int64
+	LastSearchDate    time.Time
 }
 
 func (u *User) Save() error {
@@ -145,6 +147,52 @@ func (u *User) UpdatePassword() error {
 	}
 
 	_, err = stmt.Exec(hashedPassword, u.ResetToken, u.ResetTokenExpires, u.Email)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func FindSearchCountByID(userId int64) (*User, error) {
+
+	query := `
+		SELECT id,search_count, last_search_date 
+		FROM users 
+		WHERE id = ?
+	`
+
+	row := db.DB.QueryRow(query, userId)
+
+	var user User
+
+	err := row.Scan(&user.ID, &user.SearchCount, &user.LastSearchDate)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+
+}
+
+func (u *User) UpdateSearchCount() error {
+
+	query := `
+		UPDATE users 
+		SET search_count = ?, last_search_date = ? 
+		WHERE id = ?	
+	`
+	stmt, err := db.DB.Prepare(query)
+
+	defer stmt.Close()
+
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(u.SearchCount, u.LastSearchDate, u.ID)
+
 	if err != nil {
 		return err
 	}

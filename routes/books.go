@@ -14,6 +14,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"tallyRead.com/db"
 	"tallyRead.com/models"
+	"tallyRead.com/utils"
 )
 
 func CreateBook(context *gin.Context) {
@@ -147,6 +148,48 @@ func SearchBooks(context *gin.Context) {
 	query := context.Query("q")
 	cacheKey := "books:" + query
 
+	userId, _ := context.Get("userId")
+
+	limiter := utils.GetLimiter(userId.(int64))
+	if !limiter.Allow() {
+		context.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests per minute."})
+		return
+	}
+
+	user, err := models.FindSearchCountByID(userId.(int64))
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	today := time.Now().Format("2006-01-02")
+	lastSearch := user.LastSearchDate.Format("2006-01-02")
+
+	if lastSearch != today {
+		user.SearchCount = 0
+		user.LastSearchDate = time.Now()
+
+		err = user.UpdateSearchCount()
+
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		}
+	}
+
+	if user.SearchCount >= 30 {
+		context.JSON(http.StatusTooManyRequests, gin.H{"error": "Daily search limit (30) reached."})
+		return
+	}
+
+	user.SearchCount += 1
+
+	err = user.UpdateSearchCount()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
 	// 1. Check Redis
 	if cachedData, err := db.RedisClient.Get(context, cacheKey).Result(); err == nil {
 		context.Data(http.StatusOK, "application/json", []byte(cachedData))
@@ -172,7 +215,7 @@ func SearchBooks(context *gin.Context) {
 		} `json:"items"`
 	}
 
-	_, err := client.R().SetQueryParams(map[string]string{
+	_, err = client.R().SetQueryParams(map[string]string{
 		"q": query, "maxResults": "40", "key": apiKey,
 	}).SetResult(&googleResp).Get("https://www.googleapis.com/books/v1/volumes")
 
@@ -208,7 +251,9 @@ func SearchBooks(context *gin.Context) {
 
 	// 4. Cache the clean Slice
 	jsonData, _ := json.Marshal(results)
-	db.RedisClient.Set(context, cacheKey, jsonData, 24*time.Hour)
+	if jsonData != nil {
+		db.RedisClient.Set(context, cacheKey, jsonData, 7*24*time.Hour)
+	}
 
 	context.JSON(http.StatusOK, results)
 }
