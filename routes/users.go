@@ -3,6 +3,7 @@ package routes
 import (
 	"net/http"
 	"time"
+	"unicode"
 
 	"github.com/gin-gonic/gin"
 	"tallyRead.com/models"
@@ -16,7 +17,12 @@ func RegisterUser(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	if !isValidPassword(user.Password) {
+		context.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": "Password must contain at least one uppercase letter, one number, and one special character",
+		})
+		return
+	}
 	err := user.Save()
 	if err != nil {
 		if err.Error() == "Registration limit reached: maximum 350 users allowed" {
@@ -136,4 +142,25 @@ func ResetPassword(context *gin.Context) {
 
 	context.JSON(http.StatusOK, gin.H{"message": "Password Updated"})
 
+}
+
+func isValidPassword(s string) bool {
+	var (
+		hasUpper   = false
+		hasNumber  = false
+		hasSpecial = false
+	)
+
+	for _, char := range s {
+		switch {
+		case unicode.IsUpper(char):
+			hasUpper = true
+		case unicode.IsNumber(char):
+			hasNumber = true
+		case unicode.IsPunct(char) || unicode.IsSymbol(char):
+			hasSpecial = true
+		}
+	}
+
+	return hasUpper && hasNumber && hasSpecial
 }
