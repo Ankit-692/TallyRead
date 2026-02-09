@@ -3,18 +3,28 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 
 	"github.com/redis/go-redis/v9"
 	_ "modernc.org/sqlite"
 )
 
-var DB *sql.DB
-var RedisClient *redis.Client
+var (
+	DB          *sql.DB
+	RedisClient *redis.Client
+)
 
 func InitDB() {
 	var err error
-	DB, err = sql.Open("sqlite", "api.db")
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"),
+	)
+	DB, err = sql.Open("postgres", connStr)
 	if err != nil {
 		panic("could not Open the db")
 	}
@@ -77,5 +87,4 @@ func CreateTables() {
 	if err != nil {
 		panic("Could not create Books Table " + err.Error())
 	}
-
 }
