@@ -11,10 +11,8 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		panic("Env file not loaded")
-	}
+	_ = godotenv.Load()
+
 	db.InitDB()
 	server := gin.Default()
 	server.Use(cors.New(cors.Config{
