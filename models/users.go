@@ -23,7 +23,6 @@ type User struct {
 }
 
 func (u *User) Save() error {
-
 	var count int
 	countQuery := `SELECT COUNT(*) FROM users`
 	err := db.DB.QueryRow(countQuery).Scan(&count)
@@ -32,38 +31,39 @@ func (u *User) Save() error {
 	}
 
 	if count >= 350 {
-		return fmt.Errorf("Registration limit reached: maximum 350 users allowed")
+		return fmt.Errorf("registration limit reached: maximum 350 users allowed")
 	}
 
 	query := `
-	INSERT INTO users (firstName,lastName,email,password)
-	VALUES (?,?,?,?)
+		INSERT INTO users (firstName, lastName, email, password)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id
 	`
-	stmt, err := db.DB.Prepare(query)
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
 
 	hashedPassword, err := utils.HashPassword(u.Password)
 	if err != nil {
 		return err
 	}
 
-	result, err := stmt.Exec(u.FirstName, u.LastName, u.Email, hashedPassword)
+	err = db.DB.QueryRow(
+		query,
+		u.FirstName,
+		u.LastName,
+		u.Email,
+		hashedPassword,
+	).Scan(&u.ID)
+
 	if err != nil {
 		return err
 	}
 
-	u.ID, err = result.LastInsertId()
 	u.Password = hashedPassword
-	return err
+	return nil
 }
 
 func (u *User) ValidateUser() error {
 	query := `
-	SELECT id,email,firstName,lastName,password FROM users WHERE email=?
+	SELECT id,email,firstName,lastName,password FROM users WHERE email=$1
 	`
 
 	row := db.DB.QueryRow(query, u.Email)
@@ -88,7 +88,7 @@ func (u *User) ValidateUser() error {
 
 func FindByEmail(email string) (*User, error) {
 	query := `
-	SELECT id,email,firstName,lastName FROM users WHERE email=?
+	SELECT id,email,firstName,lastName FROM users WHERE email=$1
 	`
 	row := db.DB.QueryRow(query, email)
 
@@ -104,18 +104,11 @@ func FindByEmail(email string) (*User, error) {
 func (u *User) UpdateResetToken() error {
 	query := `
         UPDATE users 
-        SET reset_token = ?, reset_token_expires = ?
-        WHERE id = ?
+        SET reset_token = $1, reset_token_expires = $2
+        WHERE id = $3
     `
 
-	stmt, err := db.DB.Prepare(query)
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
-
-	_, err = stmt.Exec(u.ResetToken, u.ResetTokenExpires, u.ID)
+	_, err := db.DB.Exec(query, u.ResetToken, u.ResetTokenExpires, u.ID)
 	if err != nil {
 		return err
 	}
@@ -127,7 +120,7 @@ func FindByResetToken(hashedToken string) (*User, error) {
 	query := `
 		SELECT id,email,firstName,lastName,reset_token,reset_token_expires 
 		FROM users 
-		WHERE reset_token=?
+		WHERE reset_token=$1
 	`
 	row := db.DB.QueryRow(query, hashedToken)
 
@@ -143,23 +136,15 @@ func FindByResetToken(hashedToken string) (*User, error) {
 func (u *User) UpdatePassword() error {
 	query := `
 		UPDATE users
-		SET password=?,reset_token=?,reset_token_expires=?
-		WHERE email=?
+		SET password=$1,reset_token=$2,reset_token_expires=$3
+		WHERE email=$4
 	`
-
-	stmt, err := db.DB.Prepare(query)
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
-
 	hashedPassword, err := utils.HashPassword(u.Password)
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(hashedPassword, u.ResetToken, u.ResetTokenExpires, u.Email)
+	_, err = db.DB.Exec(query, hashedPassword, u.ResetToken, u.ResetTokenExpires, u.Email)
 	if err != nil {
 		return err
 	}
@@ -172,7 +157,7 @@ func FindSearchCountByID(userId int64) (*User, error) {
 	query := `
 		SELECT id,search_count, last_search_date 
 		FROM users 
-		WHERE id = ?
+		WHERE id = $1
 	`
 
 	row := db.DB.QueryRow(query, userId)
@@ -193,8 +178,8 @@ func (u *User) UpdateSearchCount() error {
 
 	query := `
 		UPDATE users 
-		SET search_count = ?, last_search_date = ? 
-		WHERE id = ?	
+		SET search_count = $1, last_search_date = $2 
+		WHERE id = $3	
 	`
 	stmt, err := db.DB.Prepare(query)
 
