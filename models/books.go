@@ -26,17 +26,10 @@ type Book struct {
 func (book *Book) Save() error {
 	query := `
 	INSERT INTO books(title,description,authors,user_id,total_page,ratings,image,published_date,page_read,state)
-	VALUES (?,?,?,?,?,?,?,?,?,?)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
 	`
 
-	stmt, err := db.DB.Prepare(query)
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
-
-	result, err := stmt.Exec(book.Title, book.Description, book.Authors, book.UserID, book.TotalPage, book.Ratings, book.Image, book.PublishedDate, book.PageRead, book.State)
+	result, err := db.DB.Exec(query, book.Title, book.Description, book.Authors, book.UserID, book.TotalPage, book.Ratings, book.Image, book.PublishedDate, book.PageRead, book.State)
 
 	if err != nil {
 		return err
@@ -52,7 +45,7 @@ func GetAllBooks(userId any) ([]Book, error) {
 	SELECT id, title, description, authors, total_page, ratings, image, 
 	       published_date, page_read, state, user_id, created_at, updated_at 
 	FROM books 
-	WHERE user_id = ?
+	WHERE user_id = $1
 	`
 	rows, err := db.DB.Query(query, userId)
 	if err != nil {
@@ -90,7 +83,7 @@ func GetAllBooks(userId any) ([]Book, error) {
 }
 
 func GetBookByID(id int64) (*Book, error) {
-	query := `SELECT * from books WHERE id = ?`
+	query := `SELECT * from books WHERE id = $1`
 
 	row := db.DB.QueryRow(query, id)
 
@@ -105,17 +98,9 @@ func GetBookByID(id int64) (*Book, error) {
 
 func (book *Book) Delete() error {
 	query := `
-	DELETE FROM books WHERE ID = ?
+	DELETE FROM books WHERE ID = $1
 	`
-	stmt, err := db.DB.Prepare(query)
-
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
-
-	_, err = stmt.Exec(book.ID)
+	_, err := db.DB.Exec(query, book.ID)
 
 	return err
 }
@@ -123,8 +108,8 @@ func (book *Book) Delete() error {
 func (book *Book) Update() error {
 	query := `
 	UPDATE books
-	SET page_read=?, state=?, updated_at=CURRENT_TIMESTAMP 
-	WHERE id=?
+	SET page_read=$1, state=$2, updated_at=CURRENT_TIMESTAMP 
+	WHERE id=$3
 	`
 
 	stmt, err := db.DB.Prepare(query)
@@ -147,7 +132,7 @@ func (book *Book) Update() error {
 func GetBooksByStatus(userId int64, status string) ([]Book, error) {
 	query := `
 	SELECT * FROM books
-	WHERE user_id=? AND state=?
+	WHERE user_id=$1 AND state=$2
 	`
 
 	rows, err := db.DB.Query(query, userId, status)
