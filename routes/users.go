@@ -61,6 +61,7 @@ func Login(context *gin.Context) {
 }
 
 func Logout(context *gin.Context) {
+	context.SetSameSite(http.SameSiteNoneMode)
 	context.SetCookie("auth_token", "", -1, "/", "", false, true)
 	context.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
