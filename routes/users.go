@@ -54,14 +54,14 @@ func Login(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-
-	context.SetCookie("auth_token", token, 3600*24*7, "/", "", false, true)
+	context.SetSameSite(http.SameSiteNoneMode)
+	context.SetCookie("auth_token", token, 3600*24*7, "/", "", true, true)
 
 	context.JSON(http.StatusOK, gin.H{"message": "Login Successfully", "user": user})
 }
 
 func Logout(context *gin.Context) {
-	context.SetCookie("auth_token", "", -1, "/", "localhost", false, true)
+	context.SetCookie("auth_token", "", -1, "/", "", false, true)
 	context.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
