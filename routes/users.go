@@ -55,7 +55,7 @@ func Login(context *gin.Context) {
 		return
 	}
 
-	context.SetCookie("auth_token", token, 3600*24*7, "/", "localhost", false, true)
+	context.SetCookie("auth_token", token, 3600*24*7, "/", "", false, true)
 
 	context.JSON(http.StatusOK, gin.H{"message": "Login Successfully", "user": user})
 }
@@ -118,7 +118,6 @@ func ResetPassword(context *gin.Context) {
 	hashedToken := utils.GetHashedToken(token)
 
 	user, err := models.FindByResetToken(hashedToken)
-
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -134,14 +133,12 @@ func ResetPassword(context *gin.Context) {
 	user.ResetTokenExpires = time.Time{}
 
 	err = user.UpdatePassword()
-
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	context.JSON(http.StatusOK, gin.H{"message": "Password Updated"})
-
 }
 
 func isValidPassword(s string) bool {
