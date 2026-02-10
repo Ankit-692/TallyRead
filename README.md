@@ -1,4 +1,4 @@
-📚 TallyRead Backend
+### 📚 TallyRead Backend
 
 TallyRead is a robust Go-based REST API designed to help readers track their literary journeys. Users can search for books via the Google Books API, manage a personal library, and update reading statuses (Reading, Planning, Completed, or Dropped).
 🚀 Key Features
@@ -15,7 +15,7 @@ TallyRead is a robust Go-based REST API designed to help readers track their lit
 
     Security: Middleware-protected routes and rate-limiting.
 
-🛠️ Tech Stack
+### 🛠️ Tech Stack
 
     Language: Go (v1.24.0)
 
@@ -29,8 +29,7 @@ TallyRead is a robust Go-based REST API designed to help readers track their lit
 
     External APIs: Google Books API
 
-📂 Project Structure
-Plaintext
+### 📂 Project Structure
 
 ├── config/       # Configuration loaders (SMTP, etc.)
 ├── db/           # Database connection and initialization
@@ -41,7 +40,7 @@ Plaintext
 ├── utils/        # Helpers: Mailer, JWT, Hashing, Rate Limiter
 └── main.go       # Application entry point
 
-⚙️ Setup & Installation
+### ⚙️ Setup & Installation
 1. Prerequisites
 
     Go: 1.24.0 or higher
@@ -52,37 +51,38 @@ Plaintext
 
 2. Environment Variables
 
-Create a .env file in the root directory and fill in your credentials:
-Code snippet
-
-# Server & Auth
-secretkey=your_jwt_secret
-FRONTEND_URL=http://localhost:4200
-
-# Database (Supabase/Postgres)
-DB_HOST=your_host
-DB_PORT=5432
-DB_USER=your_user
-DB_PASSWORD=your_password
-DB_NAME=your_db_name
-
-# Redis
-REDIS_URL=your_redis_url
-
-# Google Books API
-GOOGLE_BOOKS_API_KEY=your_api_key
-
-# SMTP Configuration
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_EMAIL=your_email@gmail.com
-SMTP_PASSWORD=your_app_password
+	Create a .env file in the root directory and fill in your credentials:
+	Code snippet
+	
+	### Server & Auth
+	secretkey=your_jwt_secret
+	FRONTEND_URL=http://localhost:4200
+	
+	### Database (Supabase/Postgres)
+	DB_HOST=your_host
+	DB_PORT=5432
+	DB_USER=your_user
+	DB_PASSWORD=your_password
+	DB_NAME=your_db_name
+	
+	### Redis
+	REDIS_URL=your_redis_url
+	
+	### Google Books API
+	GOOGLE_BOOKS_API_KEY=your_api_key
+	
+	### SMTP Configuration
+	SMTP_HOST=smtp.gmail.com
+	SMTP_PORT=587
+	SMTP_EMAIL=your_email@gmail.com
+	SMTP_PASSWORD=your_app_password
 
 3. Run the App
-Bash
 
+```Bash
 go mod download
 go run main.go
+```
 
 🛣️ API Endpoints
 Public Routes
