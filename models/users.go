@@ -197,3 +197,25 @@ func (u *User) UpdateSearchCount() error {
 
 	return nil
 }
+
+func GetUserById(userId int64) (*User, error) {
+
+query := `
+		SELECT id,firstName,lastName
+		FROM users 
+		WHERE id = $1
+	`
+
+	row := db.DB.QueryRow(query, userId)
+
+	var user User
+
+	err := row.Scan(&user.ID, &user.FirstName, &user.LastName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+
+}

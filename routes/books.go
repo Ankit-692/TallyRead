@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
+	"github.com/speps/go-hashids/v2"
 	"tallyRead.com/db"
 	"tallyRead.com/models"
 	"tallyRead.com/utils"
@@ -256,4 +257,31 @@ func SearchBooks(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, results)
+}
+
+func UserProfileBooks(context *gin.Context) {
+	encodedID := context.Param("userId")
+	hd := hashids.NewData()
+	hd.Salt = os.Getenv("secretkey")
+	hd.MinLength = 6
+	h, _ := hashids.NewWithData(hd)
+
+	decodedIDs, err := h.DecodeWithError(encodedID)
+	if err != nil || len(decodedIDs) == 0 {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	user, err := models.GetUserById(int64(decodedIDs[0]))
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	books, err := models.GetAllBooks(decodedIDs[0])
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{"books": books, "userName": user.FirstName})
 }
