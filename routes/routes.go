@@ -11,6 +11,7 @@ func RegisterRoutes(server *gin.Engine) {
 	server.POST("/login", Login)
 	server.POST("/forgot-Password", ForgotPassword)
 	server.POST("/reset-password", ResetPassword)
+	server.GET("/userProfile/:userId",UserProfileBooks)
 
 	authenticated := server.Group("/api")
 	authenticated.Use(middlewares.Authenticate)
@@ -22,4 +23,5 @@ func RegisterRoutes(server *gin.Engine) {
 	authenticated.GET("/me", middlewares.Authorization)
 	authenticated.GET("/searchBooks", SearchBooks)
 	authenticated.POST("/logout", Logout)
+	authenticated.GET("/getUserProfileId", GetUserProfileHash)
 }

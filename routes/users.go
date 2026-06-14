@@ -2,10 +2,12 @@ package routes
 
 import (
 	"net/http"
+	"os"
 	"time"
 	"unicode"
 
 	"github.com/gin-gonic/gin"
+	"github.com/speps/go-hashids/v2"
 	"tallyRead.com/models"
 	"tallyRead.com/utils"
 )
@@ -161,4 +163,31 @@ func isValidPassword(s string) bool {
 	}
 
 	return hasUpper && hasNumber && hasSpecial
+}
+
+func GetUserProfileHash(context *gin.Context) {
+	userIdInterface, exists := context.Get("userId")
+	if !exists {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "userId not found in context"})
+		return
+	}
+	userId := int(userIdInterface.(int64))
+
+	hd := hashids.NewData()
+	hd.Salt = os.Getenv("secretkey")
+	hd.MinLength = 6
+
+	h, err := hashids.NewWithData(hd)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	encodedHash, err := h.Encode([]int{userId})
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "failed to encode ID"})
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{"profileHash": encodedHash})
 }
